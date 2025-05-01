@@ -4,8 +4,7 @@ import sys
 
 class Describe:
   def __init__(self):
-    cur_dir = os.path.dirname(os.path.abspath(__file__))
-    parent_dir = os.path.dirname(cur_dir)
+    parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"))
     self.csv_dir = os.path.join(parent_dir, 'datasets/')
     if not os.path.exists(self.csv_dir):
         os.makedirs(self.csv_dir)
@@ -47,6 +46,7 @@ class Describe:
   def run(self):
     df = pd.read_csv(self.filepath, sep=',')
     df = df.dropna()
+    df = df.drop('Index', axis=1)
     df_numeric = df.dropna().select_dtypes(include=['number'])
     df_numeric.reset_index(drop=True, inplace=True)
     column_width = max(len(f"feature {i}") for i in range(len(df_numeric.columns))) + 3
