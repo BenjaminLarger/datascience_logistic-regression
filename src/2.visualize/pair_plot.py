@@ -13,7 +13,7 @@ class PairPlot:
     self.csv_dir = os.path.join(parent_dir, 'datasets/')
     if not os.path.exists(self.csv_dir):
         os.makedirs(self.csv_dir)
-    self.filename = sys.argv[1] if len(sys.argv) > 2 else "dataset_train.csv"
+    self.filename = sys.argv[1] if len(sys.argv) == 2 else "dataset_train.csv"
     self.filepath = os.path.join(self.csv_dir, self.filename)
   
   def normalize_df(self, df):
@@ -23,20 +23,37 @@ class PairPlot:
     df_normalized = pd.DataFrame(x_scaled, columns=df.columns)
     return df_normalized
 
-  def find_most_similar_features(self, correlation_matrix):
-    corr_unstacked = correlation_matrix.unstack()
-    sorted_correlation = corr_unstacked.abs().sort_values(ascending=False)
-    sorted_correlation = sorted_correlation[sorted_correlation != 1.0]
-    most_similar_pair = sorted_correlation.index[1]
-    return most_similar_pair
+  def select_relevant_features(self, df, correlation_threshold=0.8):
+      """
+      Select relevant features based on correlation and domain knowledge.
 
-  def plot_scatter(self, df, feature1, feature2):
-        plt.figure(figsize=(10, 6))
-        sns.scatterplot(data=df, x=feature1, y=feature2)
-        plt.title(f'Scatter plot of {feature1} vs {feature2}')
-        plt.xlabel(feature1)
-        plt.ylabel(feature2)
-        plt.show()
+      Parameters:
+      - df: DataFrame containing the normalized data.
+      - correlation_threshold: Threshold for considering features as highly correlated.
+
+      Returns:
+      - List of selected feature names.
+      """
+      correlation_matrix = df.corr()
+      selected_features = set()
+
+      # Iterate over the correlation matrix to find highly correlated pairs
+      for i in range(len(correlation_matrix.columns)):
+          for j in range(i):
+              if abs(correlation_matrix.iloc[i, j]) > correlation_threshold:
+                  feature1 = correlation_matrix.columns[i]
+                  feature2 = correlation_matrix.columns[j]
+                  # Select one feature from the pair
+                  if feature1 not in selected_features and feature2 not in selected_features:
+                      selected_features.add(feature1)
+                      print(f"Selected {feature1} over {feature2} due to high correlation.")
+
+      # Add remaining features that are not highly correlated with any other feature
+      for feature in correlation_matrix.columns:
+          if feature not in selected_features:
+              selected_features.add(feature)
+
+      return list(selected_features)
 
   def run(self):
     try:
@@ -48,6 +65,7 @@ class PairPlot:
         print(f"Error reading CSV file: {e}")
         sys.exit(1)
 
+    df_raw["Hogwarts House"] = df_raw["Hogwarts House"].map({"Slytherin": 0, "Gryffindor": 1, "Ravenclaw": 2, "Hufflepuff": 3})
     df_numeric = df_raw.select_dtypes(include=np.number)
     df_numeric = df_numeric.dropna().reset_index(drop=True)
     if df_numeric.empty:
@@ -60,6 +78,10 @@ class PairPlot:
     plt.xticks(rotation=45)
     plt.tight_layout()
     plt.show()
+
+    selected_features = self.select_relevant_features(df_normalized)
+    print("Selected features based on correlation and domain knowledge:")
+    print(selected_features)
 
 
 def main():
