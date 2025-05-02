@@ -32,7 +32,7 @@ class Histogram:
         plt.ylabel('Frequency')
         plt.title(f'Score distribution for {house}')
         plt.legend()
-    
+
     plt.tight_layout()
     plt.show()
   
@@ -53,7 +53,6 @@ class Histogram:
     df_normalized = df_normalized[['Hogwarts House', 'score']]
     self.plot_histograms(df_normalized)
 
-    print(df_normalized.head())
 def main():
   a = Histogram()
   a.run()
