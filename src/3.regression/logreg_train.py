@@ -6,7 +6,6 @@ import numpy as np
 from scipy.stats import pearsonr
 from sklearn import linear_model, preprocessing
 import matplotlib.pyplot as plt
-import seaborn as sns
 
 class LogregTrain:
   def __init__(self):
@@ -84,11 +83,8 @@ class LogregTrain:
     plt.show()
 
   def save_csv_weights(self, weights, X_columns):
-    Hogwarts_House = ["Slytherin", "Gryffindor", "Ravenclaw", "Hufflepuff"]
     weights_df = pd.DataFrame(weights, columns=X_columns)
-    weights_df['Hogwarts House'] = Hogwarts_House
     weights_df.to_csv(os.path.join(self.csv_dir, 'weights.csv'), index=False)
-    print(f"Weights saved to {os.path.join(self.csv_dir, 'weights.csv')}")
   
   def train_logistic_regression(self, X_train, y_train):
     scaler = preprocessing.StandardScaler()
@@ -116,6 +112,7 @@ class LogregTrain:
 
     if df_numeric.empty:
         print("No numeric data available after dropping NaN values.")
+        sys.exit(1)
     selected_features = self.select_features(df_numeric, target_column='Hogwarts House', correlation_threshold=0.4, max_features=10)
     print(f"Selected features: {selected_features}")
     df_numeric = df_numeric[selected_features]
@@ -131,10 +128,6 @@ class LogregTrain:
 
     self.save_csv_weights(model.coef_, X_columns)
     
-
-    
-
-
 def main():
   a = LogregTrain()
   a.run()
