@@ -13,7 +13,7 @@ class LogregTrain:
     self.csv_dir = os.path.join(parent_dir, 'datasets/')
     if not os.path.exists(self.csv_dir):
         os.makedirs(self.csv_dir)
-    self.filename = sys.argv[1] if len(sys.argv) == 2 else "dataset_train.csv"
+    self.filename = sys.argv[1] if len(sys.argv) == 2 else "splitted_dataset_train.csv"
     self.filepath = os.path.join(self.csv_dir, self.filename)
   
   def normalize_df(self, df):

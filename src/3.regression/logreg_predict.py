@@ -4,7 +4,7 @@ import sys
 from sklearn import preprocessing
 import numpy as np
 from sklearn import preprocessing
-
+from sklearn.model_selection import train_test_split
 
 class LogregPredict:
   def __init__(self):
@@ -12,12 +12,11 @@ class LogregPredict:
     self.csv_dir = os.path.join(parent_dir, 'datasets/')
     if not os.path.exists(self.csv_dir):
         os.makedirs(self.csv_dir)
-    self.filename_test = sys.argv[1] if len(sys.argv) == 3 else "dataset_test.csv"
+    self.filename_test = sys.argv[1] if len(sys.argv) == 3 else "splitted_dataset_test.csv"
     self.filename_weights = sys.argv[2] if len(sys.argv) == 3 else "weights2.csv"
     self.filepath_test = os.path.join(self.csv_dir, self.filename_test)
     self.filepath_weights = os.path.join(self.csv_dir, self.filename_weights)
 
-  
   def normalize_df(self, df):
     x = df.values
     min_max_scaler = preprocessing.MinMaxScaler()
@@ -32,6 +31,13 @@ class LogregPredict:
     y_pred = np.dot(X, weights)
     return y_pred
   
+  def split_training_data(self, df):
+        # Stratify ensure the proportions of the classes are maintained in both sets   
+        train_df, val_df = train_test_split(
+            df, test_size=0.2, random_state=42, stratify=df["Hogwarts House"]
+        )
+        return train_df, val_df
+    
   def make_prediction(self, X_test_scaled, df_weights):
     print("--------- MAKE PREDICTION ---------")
     predictions = []
@@ -63,6 +69,11 @@ class LogregPredict:
   def run(self):
     try:
         df_test = pd.read_csv(self.filepath_test)
+        # If your CSV doesn't have headers in the first row
+        if 'Hogwarts House' not in df_test.columns:
+            # Re-read with first row as data
+            df_test = pd.read_csv(self.filepath_test, header=None, names=df_test.columns)
+
         df_weights = pd.read_csv(self.filepath_weights)
     except FileNotFoundError:
         print(f"Error: File not found at {self.filepath_test} or {self.filepath_weights}.")
@@ -94,8 +105,10 @@ class LogregPredict:
     predictions = self.make_prediction(X_test_scaled, df_weights)
     results = pd.DataFrame({
         'Index': df_test.index,
-        'Hogwarts House': predictions
+        'Hogwarts House': predictions,
+        'Herbology': df_test['Herbology'],
     })
+    results['Hogwarts House index'] = results['Hogwarts House']
     results['Hogwarts House'] = results['Hogwarts House'].map({
         0: 'Slytherin',
         1: 'Gryffindor',
@@ -103,6 +116,43 @@ class LogregPredict:
         3: 'Hufflepuff'
     })
     results.to_csv(os.path.join(self.csv_dir, 'predictions.csv'), index=False)
+
+    
+    # Compare predictions with actual values (if available)
+    try:
+      original_test = pd.read_csv(self.filepath_test)
+      if 'Hogwarts House' in original_test.columns:
+        # Map house names to indices for comparison
+        index_to_house = {
+          0: 'Slytherin',
+          1: 'Gryffindor',
+          2: 'Ravenclaw',
+          3: 'Hufflepuff'
+        }
+        
+        comparison = pd.DataFrame({
+          'Actual House': original_test['Hogwarts House'].map(index_to_house),
+          'Actual House Index': original_test['Hogwarts House'],
+          'Predicted House': results['Hogwarts House'],
+          'Predicted House Index': results['Hogwarts House index']
+        })
+        
+        # Calculate accuracy
+        correct = (comparison['Actual House'] == comparison['Predicted House']).sum()
+        total = len(comparison)
+        accuracy = correct / total * 100
+        
+        print(f"\nModel Performance:")
+        print(f"Accuracy: {accuracy:.2f}% ({correct}/{total} correct)")
+        print("\nSample predictions (first 10 rows):")
+        print(comparison.head(10))
+        
+        # Save comparison to CSV
+        comparison.to_csv(os.path.join(self.csv_dir, 'prediction_comparison.csv'), index=False)
+    except Exception as e:
+      print(f"Could not compare with original data: {e}")
+    # Compare the results with the original splitted_dataset_test.csv
+
 
 
 def main():

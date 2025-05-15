@@ -14,7 +14,7 @@ class LogregTrain:
     self.csv_dir = os.path.join(parent_dir, 'datasets/')
     if not os.path.exists(self.csv_dir):
         os.makedirs(self.csv_dir)
-    self.filename = sys.argv[1] if len(sys.argv) == 2 else "dataset_train.csv"
+    self.filename = sys.argv[1] if len(sys.argv) == 2 else "splitted_dataset_train.csv"
     self.filepath = os.path.join(self.csv_dir, self.filename)
   
   def normalize_df(self, df):
@@ -164,9 +164,11 @@ class LogregTrain:
     except Exception as e:
         print(f"Error reading CSV file: {e}")
         sys.exit(1)
-
-    df_raw["Hogwarts House"] = df_raw["Hogwarts House"].map({"Slytherin": 0, "Gryffindor": 1, "Ravenclaw": 2, "Hufflepuff": 3})
-    df_raw['Hogwarts House'] = pd.to_numeric(df_raw['Hogwarts House'], errors='coerce')
+    # Check if Hogwarts House is already converted to numeric
+    if df_raw["Hogwarts House"].dtype != 'int64':
+      df_raw["Hogwarts House"] = df_raw["Hogwarts House"].map({"Slytherin": 0, "Gryffindor": 1, "Ravenclaw": 2, "Hufflepuff": 3})
+      df_raw['Hogwarts House'] = pd.to_numeric(df_raw['Hogwarts House'], errors='coerce')
+      
     df_raw = df_raw.select_dtypes(include=np.number)
     df_numeric = df_raw.copy()
     df_numeric = df_numeric.dropna().reset_index(drop=True)
