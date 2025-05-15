@@ -65,15 +65,46 @@ class LogregPredict:
         predictions.append(predicted_house)
     print(f"Predicted house: {predictions}, len(predictions): {len(predictions)}")
     return predictions
+  
+  def display_model_prediction(self, results):
+    try:
+      original_test = pd.read_csv(self.filepath_test)
+      if 'Hogwarts House' in original_test.columns:
+        # Map house names to indices for comparison
+        index_to_house = {
+          0: 'Slytherin',
+          1: 'Gryffindor',
+          2: 'Ravenclaw',
+          3: 'Hufflepuff'
+        }
+        
+        comparison = pd.DataFrame({
+          'Actual House': original_test['Hogwarts House'].map(index_to_house),
+          'Actual House Index': original_test['Hogwarts House'],
+          'Predicted House': results['Hogwarts House'],
+          'Predicted House Index': results['Hogwarts House index']
+        })
+        
+        # Calculate accuracy
+        correct = (comparison['Actual House'] == comparison['Predicted House']).sum()
+        total = len(comparison)
+        accuracy = correct / total * 100
+        
+        print(f"\nModel Performance:")
+        print(f"Accuracy: {accuracy:.2f}% ({correct}/{total} correct)")
+        print("\nSample predictions (first 10 rows):")
+        print(comparison.head(10))
+        
+        # Save comparison to CSV
+        comparison.to_csv(os.path.join(self.csv_dir, 'prediction_comparison.csv'), index=False)
+    except Exception as e:
+      print(f"Could not compare with original data: {e}")
+    # Compare the results with the original splitted_dataset_test.csv
 
   def run(self):
+    # Read the test dataset and weights
     try:
         df_test = pd.read_csv(self.filepath_test)
-        # If your CSV doesn't have headers in the first row
-        if 'Hogwarts House' not in df_test.columns:
-            # Re-read with first row as data
-            df_test = pd.read_csv(self.filepath_test, header=None, names=df_test.columns)
-
         df_weights = pd.read_csv(self.filepath_weights)
     except FileNotFoundError:
         print(f"Error: File not found at {self.filepath_test} or {self.filepath_weights}.")
@@ -82,6 +113,8 @@ class LogregPredict:
         print(f"Error reading CSV file: {e}")
         sys.exit(1)
     print(f"df_test head: {df_test.head()}")
+
+    # Check if Hogwarts House is already converted to numeric
     df_test.drop('Hogwarts House', axis=1, inplace=True)
     df_test.drop('Index', axis=1, inplace=True)
     df_test.dropna(inplace=True)
@@ -117,41 +150,10 @@ class LogregPredict:
     })
     results.to_csv(os.path.join(self.csv_dir, 'predictions.csv'), index=False)
 
+    self.display_model_prediction(results)
+
     
-    # Compare predictions with actual values (if available)
-    try:
-      original_test = pd.read_csv(self.filepath_test)
-      if 'Hogwarts House' in original_test.columns:
-        # Map house names to indices for comparison
-        index_to_house = {
-          0: 'Slytherin',
-          1: 'Gryffindor',
-          2: 'Ravenclaw',
-          3: 'Hufflepuff'
-        }
-        
-        comparison = pd.DataFrame({
-          'Actual House': original_test['Hogwarts House'].map(index_to_house),
-          'Actual House Index': original_test['Hogwarts House'],
-          'Predicted House': results['Hogwarts House'],
-          'Predicted House Index': results['Hogwarts House index']
-        })
-        
-        # Calculate accuracy
-        correct = (comparison['Actual House'] == comparison['Predicted House']).sum()
-        total = len(comparison)
-        accuracy = correct / total * 100
-        
-        print(f"\nModel Performance:")
-        print(f"Accuracy: {accuracy:.2f}% ({correct}/{total} correct)")
-        print("\nSample predictions (first 10 rows):")
-        print(comparison.head(10))
-        
-        # Save comparison to CSV
-        comparison.to_csv(os.path.join(self.csv_dir, 'prediction_comparison.csv'), index=False)
-    except Exception as e:
-      print(f"Could not compare with original data: {e}")
-    # Compare the results with the original splitted_dataset_test.csv
+
 
 
 
