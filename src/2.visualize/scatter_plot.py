@@ -51,6 +51,7 @@ class ScatterPlot:
     df_numeric = df_numeric.dropna().reset_index(drop=True)
     if df_numeric.empty:
         print("No numeric data available after dropping NaN values.")
+        sys.exit(1)
 
     df_normalized = self.normalize_df(df_numeric)
     df_normalized.drop(columns=['Index'], inplace=True)

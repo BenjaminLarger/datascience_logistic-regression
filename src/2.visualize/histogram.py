@@ -44,11 +44,9 @@ class Histogram:
     df_numeric.reset_index(drop=True, inplace=True)
     hogwarts_column = df_numeric['Hogwarts House']
     df_numeric = df_numeric.select_dtypes(include=['number'])
-    print(f"df_numeric is {df_numeric.columns}")
     df_normalized = self.normalize_df(df_numeric)
     score_column = df_normalized.mean(axis=1)
     df_normalized['Hogwarts House'] = hogwarts_column
-    print(f"df_normalized columns {df_normalized.columns}")
     df_normalized['score'] = score_column
     df_normalized = df_normalized[['Hogwarts House', 'score']]
     self.plot_histograms(df_normalized)

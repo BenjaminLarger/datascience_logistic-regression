@@ -3,7 +3,6 @@ import os
 import sys
 from sklearn import preprocessing
 import numpy as np
-from sklearn import preprocessing
 from sklearn.model_selection import train_test_split
 
 class LogregPredict:
@@ -24,9 +23,6 @@ class LogregPredict:
     df_normalized = pd.DataFrame(x_scaled, columns=df.columns)
     return df_normalized
 
-  def save_csv_prediction(self, weights, X_columns):
-    pass
-
   def predict(self, X, weights):
     y_pred = np.dot(X, weights)
     return y_pred
@@ -39,7 +35,6 @@ class LogregPredict:
         return train_df, val_df
     
   def make_prediction(self, X_test_scaled, df_weights):
-    print("--------- MAKE PREDICTION ---------")
     predictions = []
     houses = ['Slytherin', 'Gryffindor', 'Ravenclaw', 'Hufflepuff']
     houses = df_weights.index.tolist()
@@ -51,7 +46,6 @@ class LogregPredict:
 
         for house in houses:
             # Get the weights for the current house
-            print(f"house: {house}, df_weights.loc[house, 'Bias']: {df_weights.loc[house, 'Bias']}")
             bias = df_weights.loc[house, 'Bias']
             coefficients = df_weights.loc[house, features].values
 
@@ -63,7 +57,6 @@ class LogregPredict:
             house_scores[house] = probability
         predicted_house = max(house_scores, key=house_scores.get)
         predictions.append(predicted_house)
-    print(f"Predicted house: {predictions}, len(predictions): {len(predictions)}")
     return predictions
   
   def display_model_prediction(self, results):
@@ -102,6 +95,7 @@ class LogregPredict:
     # Compare the results with the original splitted_dataset_test.csv
 
   def run(self):
+
     # Read the test dataset and weights
     try:
         df_test = pd.read_csv(self.filepath_test)
@@ -112,34 +106,29 @@ class LogregPredict:
     except Exception as e:
         print(f"Error reading CSV file: {e}")
         sys.exit(1)
-    print(f"df_test head: {df_test.head()}")
 
-    # Check if Hogwarts House is already converted to numeric
+    # Ensure we have clean data
     df_test.drop('Hogwarts House', axis=1, inplace=True)
-    df_test.drop('Index', axis=1, inplace=True)
     df_test.dropna(inplace=True)
     # df_test = df_test.reset_index(drop=True)
     df_test = df_test.select_dtypes(include=np.number).drop('Index', axis=1, errors='ignore')
-    print(f"df_test head:\n {df_test.head()}")
-
     if df_test.empty:
         print("Error: DataFrame is empty after dropping non-numeric columns and NaN values.")
         sys.exit(1)
+
     # Select only the columns that are in df_weights
-    print(f"df_weights columns: {df_weights.columns}")
     X_columns = df_weights.drop('Bias', axis=1).drop('Hogwarts House', axis=1).columns.tolist()
     df_test = df_test[X_columns]
-    print(f"df_test head:\n {df_test.head()}")
 
+    # Normalize the test data
     scaler = preprocessing.StandardScaler()
     X_test_scaled = scaler.fit_transform(df_test)
-    # Only 310 rows. Why ?
-    print(f"X_test_scaled head:\n {X_test_scaled[:5]}\n X_test_scaled shape: {X_test_scaled.shape}")
+
+    # Make predictions
     predictions = self.make_prediction(X_test_scaled, df_weights)
     results = pd.DataFrame({
         'Index': df_test.index,
         'Hogwarts House': predictions,
-        'Herbology': df_test['Herbology'],
     })
     results['Hogwarts House index'] = results['Hogwarts House']
     results['Hogwarts House'] = results['Hogwarts House'].map({
@@ -148,14 +137,9 @@ class LogregPredict:
         2: 'Ravenclaw',
         3: 'Hufflepuff'
     })
-    results.to_csv(os.path.join(self.csv_dir, 'predictions.csv'), index=False)
+    results.to_csv(os.path.join(self.csv_dir, 'houses.csv'), index=False)
 
     self.display_model_prediction(results)
-
-    
-
-
-
 
 def main():
   a = LogregPredict()

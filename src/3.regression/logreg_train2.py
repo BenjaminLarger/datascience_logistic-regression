@@ -4,7 +4,6 @@ import sys
 from sklearn import preprocessing
 import numpy as np
 from scipy.stats import pearsonr
-from sklearn import preprocessing
 import matplotlib.pyplot as plt
 from sklearn.linear_model import LogisticRegression
 
@@ -24,7 +23,7 @@ class LogregTrain:
     df_normalized = pd.DataFrame(x_scaled, columns=df.columns)
     return df_normalized
 
-  def select_features(self, df, target_column=None, correlation_threshold=0.5, max_features=10):
+  def select_features(self, df, target_column='Hogwarts House', correlation_threshold=0.5, max_features=5):
       """
       Select the most relevant features based on correlation or variance.
       
@@ -37,9 +36,8 @@ class LogregTrain:
       Returns:
       - List of selected feature names
       """
-      print("Analyzing feature importance...")
-
       df = self.normalize_df(df)
+      df.drop(columns='Index', inplace=True, errors='ignore')
       
       if target_column is not None and target_column in df.columns:
           # Select features based on correlation with target
@@ -75,18 +73,7 @@ class LogregTrain:
           
       return selected_features
   
-  def plot_feature_importance(self, selected_features, model):
-    plt.figure
-    plt.bar(selected_features[:-1], np.abs(model.coef_.mean(axis=0)))
-    plt.xticks(rotation=45)
-    plt.title("Feature Importance")
-    plt.tight_layout()
-    plt.show()
-  
   def save_csv_weights(self, weights, bias, X_columns):
-    print(f"type of weights: {type(weights)}")
-    print(f"type of bias: {type(bias)}")
-    print(f"Weights = {weights}")
     # Convert bias to scalars
     houses = ['Slytherin', 'Gryffindor', 'Ravenclaw', 'Hufflepuff']
     bias = [float(b[0]) for b in bias]  # Extract first element from each array
@@ -98,7 +85,6 @@ class LogregTrain:
     weights_df['Bias'] = bias
     weights_df['Hogwarts House'] = houses
     weights_df.index = houses
-    print(f"Weights_df = {weights_df}")
     weights_df.to_csv(os.path.join(self.csv_dir, 'weights2.csv'), index=False)
 
   def train_one_vs_all(self, X_train, unique_houses, houses):
@@ -126,7 +112,6 @@ class LogregTrain:
     """
     Plot each feature separately to show the mean value for each house.
     """
-    print(f"df_numeric head: {df_numeric.head()}")
     Slytherin_data = df_numeric[df_numeric['Hogwarts House'] == 0]
     Gryffindor_data = df_numeric[df_numeric['Hogwarts House'] == 1]
     Ravenclaw_data = df_numeric[df_numeric['Hogwarts House'] == 2]
@@ -143,7 +128,7 @@ class LogregTrain:
     features = [col for col in df_numeric.columns if col != 'Hogwarts House']
     
     # Create a plot for each feature
-    fig, axes = plt.subplots(len(features), 1, figsize=(10, 4*len(features)))
+    _, axes = plt.subplots(len(features), 1, figsize=(10, 4*len(features)))
     
     for i, feature in enumerate(features):
         feature_data = means_df.loc[feature]
@@ -168,7 +153,7 @@ class LogregTrain:
     if df_raw["Hogwarts House"].dtype != 'int64':
       df_raw["Hogwarts House"] = df_raw["Hogwarts House"].map({"Slytherin": 0, "Gryffindor": 1, "Ravenclaw": 2, "Hufflepuff": 3})
       df_raw['Hogwarts House'] = pd.to_numeric(df_raw['Hogwarts House'], errors='coerce')
-      
+
     df_raw = df_raw.select_dtypes(include=np.number)
     df_numeric = df_raw.copy()
     df_numeric = df_numeric.dropna().reset_index(drop=True)
@@ -176,10 +161,13 @@ class LogregTrain:
     if df_numeric.empty:
         print("No numeric data available after dropping NaN values.")
         sys.exit(1)
-    selected_features = self.select_features(df_numeric, target_column='Hogwarts House', correlation_threshold=0.4, max_features=10)
+    selected_features = self.select_features(df_numeric, correlation_threshold=0.43, max_features=10)
     print(f"Selected features: {selected_features}")
+    # df_numeric = df_numeric.drop(columns=['Charms'])
     df_numeric = df_numeric[selected_features]
     self.plot_feature_importance(df_numeric)
+    df_numeric.drop(columns=['Charms'], inplace=True, errors='ignore')
+    # df_numeric.drop(columns=['Herbology'], inplace=True, errors='ignore')
     X_columns = df_numeric.drop(columns=['Hogwarts House']).columns
     X = df_numeric.drop(columns=['Hogwarts House']).values
     houses = df_numeric['Hogwarts House'].values
@@ -191,18 +179,14 @@ class LogregTrain:
     # Get the unique houses
     unique_houses = np.unique(houses)
 
-    weights, model = self.train_one_vs_all(X_scaled, unique_houses, houses)
+    weights, _ = self.train_one_vs_all(X_scaled, unique_houses, houses)
 
     weights_df = pd.DataFrame(weights).T
     weights_df.columns = ['Bias'] + list(X_columns)
     houses = ['Slytherin', 'Gryffindor', 'Ravenclaw', 'Hufflepuff']
-    # weights_df['Hogwarts House'] = unique_houses
     weights_df['Hogwarts House'] = houses
     weights_df.index = unique_houses
     weights_df.to_csv(os.path.join(self.csv_dir, 'weights2.csv'), index=False)
-    # print(f"Weights (Coefficients): {weights}")
-    # print(f"X columns: {X_columns}")
-    # self.save_csv_weights(weights, X_columns)
 
 def main():
   a = LogregTrain()

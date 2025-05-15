@@ -1,7 +1,6 @@
 import pandas as pd
 import os
 import sys
-from sklearn import preprocessing
 import numpy as np
 from scipy.stats import pearsonr
 from sklearn import linear_model, preprocessing
@@ -36,8 +35,7 @@ class LogregTrain:
       Returns:
       - List of selected feature names
       """
-      print("Analyzing feature importance...")
-
+      
       df = self.normalize_df(df)
       
       if target_column is not None and target_column in df.columns:
@@ -115,14 +113,12 @@ class LogregTrain:
         sys.exit(1)
 
     selected_features = self.select_features(df_numeric, target_column='Hogwarts House', correlation_threshold=0.4, max_features=10)
-    print(f"Selected features: {selected_features}")
     df_numeric = df_numeric[selected_features]
     X_train = df_numeric.drop(columns=['Hogwarts House'])
     X_columns = X_train.columns
     y_train = df_numeric['Hogwarts House']
 
     model = self.train_logistic_regression(X_train, y_train)
-
     print(f"Weights (Coefficients): {model.coef_}\nBias (Intercept): {model.intercept_}")
 
     self.plot_feature_importance(selected_features, model)
