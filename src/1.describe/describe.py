@@ -1,7 +1,7 @@
 import pandas as pd
 import os
 import sys
-
+from math import sqrt
 class Describe:
   def __init__(self):
     parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"))
@@ -22,7 +22,7 @@ class Describe:
     sum = 0
     for i in range(len(column)):
         sum += (column[i] - mean) ** 2
-    return (sum / len(column)) ** 0.5
+    return sqrt(sum / len(column))
   
   def get_min(self, column):
     min = column[0]
@@ -38,10 +38,29 @@ class Describe:
             max = column[i]
     return max
   
-  def get_quantile(self, column, q):
+  def quartile_one(self, column):
     sorted_column = sorted(column)
-    index = int(q * len(sorted_column))
-    return sorted_column[index]
+    k = len(sorted_column) // 4
+    if len(sorted_column) % 4 < 2:
+        return sorted_column[k-1] + sorted_column[k] / 2
+    else:
+        return sorted_column[k - 1]
+    
+  def quartile_two(self, column):
+    sorted_column = sorted(column)
+    k = len(sorted_column) // 2
+    if len(sorted_column) % 2 < 2:
+        return sorted_column[k-1] + sorted_column[k] / 2
+    else:
+        return sorted_column[k - 1]
+  
+  def quartile_three(self, column):
+    sorted_column = sorted(column)
+    k = len(sorted_column) * 3 // 4
+    if len(sorted_column) % 4 < 2:
+        return sorted_column[k-1] + sorted_column[k] / 2
+    else:
+        return sorted_column[k - 1]
 
   def run(self):
     df = pd.read_csv(self.filepath, sep=',')
@@ -81,17 +100,17 @@ class Describe:
 
     sys.stdout.write("25%".ljust(column_width))
     for col in df_numeric.columns:
-        sys.stdout.write(format_value(self.get_quantile(df_numeric[col], 0.25)))
+        sys.stdout.write(format_value(self.quartile_one(df_numeric[col])))
     sys.stdout.write("\n")
 
     sys.stdout.write("50%".ljust(column_width))
     for col in df_numeric.columns:
-        sys.stdout.write(format_value(self.get_quantile(df_numeric[col], 0.5)))
+        sys.stdout.write(format_value(self.quartile_two(df_numeric[col])))
     sys.stdout.write("\n")
 
     sys.stdout.write("75%".ljust(column_width))
     for col in df_numeric.columns:
-        sys.stdout.write(format_value(self.get_quantile(df_numeric[col], 0.75)))
+        sys.stdout.write(format_value(self.quartile_three(df_numeric[col])))
     sys.stdout.write("\n")
 
     sys.stdout.write("Max".ljust(column_width))
@@ -100,39 +119,39 @@ class Describe:
     sys.stdout.write("\n\n")
 
     # Uncomment the following lines to use pandas built-in methods
-    #   
-    # sys.stdout.write("Count".ljust(column_width))
-    # for col in df_numeric.columns:
-    #     sys.stdout.write(format_value(df_numeric[col].count()))
-    # sys.stdout.write("\n")
-    # sys.stdout.write("Mean".ljust(column_width))
-    # for col in df_numeric.columns:
-    #     sys.stdout.write(format_value(df_numeric[col].mean()))
-    # sys.stdout.write("\n")
-    # sys.stdout.write("Std".ljust(column_width))
-    # for col in df_numeric.columns:
-    #     sys.stdout.write(format_value(df_numeric[col].std()))
-    # sys.stdout.write("\n")
-    # sys.stdout.write("Min".ljust(column_width))
-    # for col in df_numeric.columns:
-    #     sys.stdout.write(format_value(df_numeric[col].min()))
-    # sys.stdout.write("\n")
-    # sys.stdout.write("25%".ljust(column_width))
-    # for col in df_numeric.columns:
-    #     sys.stdout.write(format_value(df_numeric[col].quantile(0.25)))
-    # sys.stdout.write("\n")
-    # sys.stdout.write("50%".ljust(column_width))
-    # for col in df_numeric.columns:
-    #     sys.stdout.write(format_value(df_numeric[col].quantile(0.5)))
-    # sys.stdout.write("\n")
-    # sys.stdout.write("75%".ljust(column_width))
-    # for col in df_numeric.columns:
-    #     sys.stdout.write(format_value(df_numeric[col].quantile(0.75)))
-    # sys.stdout.write("\n")
-    # sys.stdout.write("Max".ljust(column_width))
-    # for col in df_numeric.columns:
-    #     sys.stdout.write(format_value(df_numeric[col].max()))
-    # sys.stdout.write("\n")
+      
+    sys.stdout.write("Count".ljust(column_width))
+    for col in df_numeric.columns:
+        sys.stdout.write(format_value(df_numeric[col].count()))
+    sys.stdout.write("\n")
+    sys.stdout.write("Mean".ljust(column_width))
+    for col in df_numeric.columns:
+        sys.stdout.write(format_value(df_numeric[col].mean()))
+    sys.stdout.write("\n")
+    sys.stdout.write("Std".ljust(column_width))
+    for col in df_numeric.columns:
+        sys.stdout.write(format_value(df_numeric[col].std()))
+    sys.stdout.write("\n")
+    sys.stdout.write("Min".ljust(column_width))
+    for col in df_numeric.columns:
+        sys.stdout.write(format_value(df_numeric[col].min()))
+    sys.stdout.write("\n")
+    sys.stdout.write("25%".ljust(column_width))
+    for col in df_numeric.columns:
+        sys.stdout.write(format_value(df_numeric[col].quantile(0.25)))
+    sys.stdout.write("\n")
+    sys.stdout.write("50%".ljust(column_width))
+    for col in df_numeric.columns:
+        sys.stdout.write(format_value(df_numeric[col].quantile(0.5)))
+    sys.stdout.write("\n")
+    sys.stdout.write("75%".ljust(column_width))
+    for col in df_numeric.columns:
+        sys.stdout.write(format_value(df_numeric[col].quantile(0.75)))
+    sys.stdout.write("\n")
+    sys.stdout.write("Max".ljust(column_width))
+    for col in df_numeric.columns:
+        sys.stdout.write(format_value(df_numeric[col].max()))
+    sys.stdout.write("\n")
 
 def main():
   a = Describe()

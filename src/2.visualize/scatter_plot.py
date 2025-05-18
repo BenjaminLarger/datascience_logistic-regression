@@ -14,19 +14,19 @@ class ScatterPlot:
         os.makedirs(self.csv_dir)
     self.filename = sys.argv[1] if len(sys.argv) == 2 else "dataset_train.csv"
     self.filepath = os.path.join(self.csv_dir, self.filename)
-  
-  def normalize_df(self, df):
-    x = df.values
-    min_max_scaler = preprocessing.MinMaxScaler()
-    x_scaled = min_max_scaler.fit_transform(x)
-    df_normalized = pd.DataFrame(x_scaled, columns=df.columns)
-    return df_normalized
 
   def find_most_similar_features(self, correlation_matrix):
     corr_unstacked = correlation_matrix.unstack()
     sorted_correlation = corr_unstacked.abs().sort_values(ascending=False)
     sorted_correlation = sorted_correlation[sorted_correlation != 1.0]
-    most_similar_pair = sorted_correlation.index[1]
+    print("Top 10 most similar features:")
+    for i, (pair, corr) in enumerate(sorted_correlation.items()):
+        if i < 20:
+            print(f"{i+1}: {pair[0]} and {pair[1]} with correlation {corr:.25f}")
+        else:
+            break
+    most_similar_pair = sorted_correlation.index[0]
+    print(f"Most similar features: {most_similar_pair[0]} and {most_similar_pair[1]} with correlation {sorted_correlation.iloc[1]:.25f}")
     return most_similar_pair
 
   def plot_scatter(self, df, feature1, feature2):
@@ -53,11 +53,10 @@ class ScatterPlot:
         print("No numeric data available after dropping NaN values.")
         sys.exit(1)
 
-    df_normalized = self.normalize_df(df_numeric)
-    df_normalized.drop(columns=['Index'], inplace=True)
-    correlation_matrix = df_normalized.corr()
+    df_numeric.drop(columns=['Index'], inplace=True)
+    correlation_matrix = df_numeric.corr()
     feature1, feature2 = self.find_most_similar_features(correlation_matrix)
-    self.plot_scatter(df_normalized, feature1, feature2)
+    self.plot_scatter(df_numeric, feature1, feature2)
 
 
 def main():
